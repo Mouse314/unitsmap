@@ -1,0 +1,30 @@
+export default class Vector {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    lenght() {
+        return Math.sqrt(this.x * this.x + this.y * this.y);
+    }
+
+    distance(point) {
+        return Math.sqrt(Math.pow(this.x - point.x, 2) + Math.pow(this.y - point.y, 2));
+    }
+
+    getOpposite() {
+        return new Vector(-this.x, -this.y);
+    }
+
+    add(vector) {
+        this.x += vector.x;
+        this.y += vector.y;
+        return this;
+    }
+
+    sub(vector) {
+        this.x -= vector.x;
+        this.y -= vector.y;
+        return this;
+    }
+}
