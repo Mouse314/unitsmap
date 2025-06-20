@@ -1,16 +1,26 @@
+import Geometry from "./Geometry/Geometry.js";
 import Projection from "./Geometry/projection.js";
 import Vector from "./Geometry/Vector.js";
-import { drawFigures } from "./Render/drawFigures.js";
+import addMouseListeners from "./InputEvents/MouseListener.js";
+import Polygon from "./Render/Figures/Polygon.js";
 import Rect from "./Render/Figures/Rect.js";
+import Objects from "./Render/Objects.js";
+import update from "./Render/update.js";
 
 const canvas = document.getElementById('drawingField');
 const ctx = canvas.getContext("2d");
 const container = canvas.parentElement;
+const objects = new Objects();
 
 const figures = [
-    new Rect(new Vector(.1, .2), 1, 1),
-    new Rect(new Vector(.3, .4), 1, 1),
+    new Rect(new Vector(.1, .2), 1, 1, "pink", 2, "blue"),
+    new Rect(new Vector(.3, .4), 1, 1, "green", 1, "red"),
+    new Polygon([new Vector(.2, .2),
+                 new Vector(.2, .3),
+                 new Vector(.3, .4),], "rose", 3, "magenta"),
 ];
+
+objects.addFigures(figures);
 
 function resizeCanvas() {
     const computedStyle = getComputedStyle(container);
@@ -31,10 +41,10 @@ const backgroundSize = 2000;
 
 const projection = new Projection(center, horizontalRange, verticalRange, canvas.width, canvas.height, backgroundSize);
 
+const appGeometry = new Geometry(canvas, ctx, projection, objects);
+
 window.addEventListener('resize', resizeCanvas);
 
-function update() {
-    drawFigures(figures, ctx, projection);
-}
+update(appGeometry);
 
-update();
+addMouseListeners(appGeometry);
