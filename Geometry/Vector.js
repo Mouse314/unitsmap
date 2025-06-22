@@ -17,14 +17,22 @@ export default class Vector {
     }
 
     add(vector) {
-        this.x += vector.x;
-        this.y += vector.y;
-        return this;
+        return new Vector(this.x + vector.x, this.y + vector.y);
     }
 
     sub(vector) {
-        this.x -= vector.x;
-        this.y -= vector.y;
-        return this;
+        return new Vector(this.x - vector.x, this.y - vector.y);
+    }
+
+    mul(number) {
+        return new Vector(this.x * number, this.y * number);
+    }
+
+    lerp(vector, t) {
+        return this.add(vector.sub(this).mul(t))
+    }
+
+    copy() {
+        return new Vector(this.x, this.y);
     }
 }

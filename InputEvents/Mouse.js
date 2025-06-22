@@ -6,6 +6,7 @@ export default class Mouse {
         this.prevY = -1;
         this.deltaX = 0;
         this.deltaY = 0;
+        this.isClicked = false;
     }
 
     updatePosition(x, y) {
@@ -27,5 +28,9 @@ export default class Mouse {
         this.y = y;
         this.deltaX = deltaX;
         this.deltaY = deltaY;
+    }
+    
+    setClicked(state) {
+        this.isClicked = state;
     }
 }

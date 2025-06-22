@@ -12,16 +12,24 @@ export default class Rect extends Figure {
     }
 
     draw (ctx, proj) {
-        const startX = this.center.x - this.width / 2;
-        const startY = this.center.y - this.height / 2;
+        const startWorldPoint = new Vector(this.center.x - this.width / 2, this.center.y - this.height / 2);
 
-        const screenPoint = proj.worldToScreenPoint(new Vector(startX, startY));
+        const screenPointStart = proj.worldToScreenPoint(startWorldPoint);
+        const screenPoint1 = proj.worldToScreenPoint(startWorldPoint.add(new Vector(this.width, 0)));
+        const screenPoint2 = proj.worldToScreenPoint(startWorldPoint.add(new Vector(this.width, -this.height)));
+        const screenPoint3 = proj.worldToScreenPoint(startWorldPoint.sub(new Vector(0, this.height)));
 
         ctx.fillStyle = this.fillColor;
-        ctx.fillRect(screenPoint.x, screenPoint.y, this.width, this.height);
-
         ctx.strokeStyle = this.borderColor;
         ctx.lineWidth = this.borderWidth;
-        ctx.strokeRect(screenPoint.x, screenPoint.y, this.width, this.height);
+
+        ctx.beginPath();
+        ctx.moveTo(screenPointStart.x, screenPointStart.y);
+        ctx.lineTo(screenPoint1.x, screenPoint1.y);
+        ctx.lineTo(screenPoint2.x, screenPoint2.y);
+        ctx.lineTo(screenPoint3.x, screenPoint3.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
     }
 }

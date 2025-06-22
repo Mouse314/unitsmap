@@ -1,32 +1,33 @@
 import Vector from "../Geometry/Vector.js";
 import update from "../Render/update.js";
 import drag from "../State/mapDrag.js";
+import TransformGeometry from "../State/transform.js";
 import Mouse from "./Mouse.js";
 
-export default function addMouseListeners(geometry) {
+export default function addMouseListeners(geometry, ruler) {
     const [canvas, ctx, proj, objects] = geometry.destruct();
 
-    let isClicked = false;
-
     const mouse = new Mouse();
+    const transform = new TransformGeometry(100, ruler);
 
     canvas.addEventListener("mousedown", (e) => {
         mouse.updatePosition(e.offsetX, e.offsetY);
 
-        isClicked = true;
+        mouse.setClicked(true);
     });
 
     canvas.addEventListener("mousemove", (e) => {
         mouse.updatePosition(e.offsetX, e.offsetY);
 
         // Перетаскивание карты
-        if(isClicked) drag(geometry, mouse);
+        drag(geometry, mouse, ruler);
     });
 
     canvas.addEventListener("mouseup", (e) => {
-        isClicked = false;
+        mouse.setClicked(false);
     });
 
+    // Зуммирование
     const zoomIntencity = 0.1;
     canvas.addEventListener("wheel",  (e) => {
         e.preventDefault();
@@ -36,23 +37,28 @@ export default function addMouseListeners(geometry) {
         let deltaX = (cursorWorld.x - proj.centerPoint.x) * zoomIntencity;
         let deltaY = (cursorWorld.y - proj.centerPoint.y) * zoomIntencity;
 
+        const newGeometry = geometry.copy();
 
         if (e.deltaY < 0){
             // Вниз
-            proj.horizontalRange -= proj.horizontalRange * zoomIntencity;
-            proj.verticalRange -= proj.verticalRange * zoomIntencity;
-            proj.centerPoint.x += deltaX;
-            proj.centerPoint.y += deltaY;
+            newGeometry.proj.horizontalRange -= proj.horizontalRange * zoomIntencity;
+            newGeometry.proj.verticalRange -= proj.verticalRange * zoomIntencity;
+            newGeometry.proj.centerPoint.x += deltaX;
+            newGeometry.proj.centerPoint.y += deltaY;
 
         } else {
             // Вверх
-            proj.horizontalRange += proj.horizontalRange * zoomIntencity;
-            proj.verticalRange += proj.verticalRange * zoomIntencity;
-            proj.centerPoint.x -= deltaX;
-            proj.centerPoint.y -= deltaY;
+            newGeometry.proj.horizontalRange += proj.horizontalRange * zoomIntencity;
+            newGeometry.proj.verticalRange += proj.verticalRange * zoomIntencity;
+            newGeometry.proj.centerPoint.x -= deltaX;
+            newGeometry.proj.centerPoint.y -= deltaY;
         }
 
+        transform.animate(geometry, newGeometry);
+
+        geometry = newGeometry;
+
         proj.setBackgroundPos(canvas);
-        update(geometry);
+        update(geometry, ruler);
     });
 }

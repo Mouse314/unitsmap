@@ -5,6 +5,7 @@ import addMouseListeners from "./InputEvents/MouseListener.js";
 import Polygon from "./Render/Figures/Polygon.js";
 import Rect from "./Render/Figures/Rect.js";
 import Objects from "./Render/Objects.js";
+import Ruler from "./Render/Ruler.js";
 import update from "./Render/update.js";
 
 const canvas = document.getElementById('drawingField');
@@ -13,8 +14,8 @@ const container = canvas.parentElement;
 const objects = new Objects();
 
 const figures = [
-    new Rect(new Vector(.1, .2), 1, 1, "pink", 2, "blue"),
-    new Rect(new Vector(.3, .4), 1, 1, "green", 1, "red"),
+    new Rect(new Vector(.1, .2), .1, .1, "pink", 2, "blue"),
+    new Rect(new Vector(.3, .4), .1, .1, "green", 1, "red"),
     new Polygon([new Vector(.2, .2),
                  new Vector(.2, .3),
                  new Vector(.3, .4),], "rose", 3, "magenta"),
@@ -43,8 +44,10 @@ const projection = new Projection(center, horizontalRange, verticalRange, canvas
 
 const appGeometry = new Geometry(canvas, ctx, projection, objects);
 
+const ruler = new Ruler(appGeometry);
+
 window.addEventListener('resize', resizeCanvas);
 
-update(appGeometry);
+update(appGeometry, ruler);
 
-addMouseListeners(appGeometry);
+addMouseListeners(appGeometry, ruler);

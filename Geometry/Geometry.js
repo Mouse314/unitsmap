@@ -9,4 +9,13 @@ export default class Geometry {
     destruct() {
         return [this.canvas, this.ctx, this.proj, this.objects];
     }
+
+    copy() {
+        return new Geometry(
+            this.canvas,
+            this.ctx,
+            this.proj.copy(),
+            this.objects
+        );
+    }
 }

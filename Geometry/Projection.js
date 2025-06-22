@@ -30,4 +30,15 @@ export default class Projection {
         canvas.style.backgroundPositionX = pictureCenter.x + "px";
         canvas.style.backgroundPositionY = pictureCenter.y + "px";
     }
+
+    copy() {
+        return new Projection(
+            this.centerPoint.copy(),
+            this.horizontalRange,
+            this.verticalRange,
+            this.canvasWidth,
+            this.canvasHeight,
+            this.backgroundSize
+        );
+    }
 }
