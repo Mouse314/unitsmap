@@ -1,21 +1,21 @@
 import Vector from "../Geometry/Vector.js";
 
 export default class Ruler {
-    constructor(geometry) {
+    constructor(geometry, pointsAmount) {
         this.geometry = geometry;
+        this.pointsAmount = pointsAmount;
+        this.power = 0;
+        this.aspect = 0;
+        this.verticalPoints = [];
+        this.horizontalPoints = [];
+        this.recalculateAspect(pointsAmount);
     }
 
-    draw() {
+    draw(isZooming = false) {
         const [canvas, ctx, proj, objects] = this.geometry.destruct();
 
-        const cornerPoint = proj.screenToWorldPoint(new Vector(0, canvas.height));
-
-        const verticalPoints = [];
-        const horizontalPoints = [];
-
-        for (let i = 1; i < 4; i++) {
-            verticalPoints.push(proj.screenToWorldPoint(new Vector(0, canvas.height * i / 4)));
-            horizontalPoints.push(proj.screenToWorldPoint(new Vector(canvas.width * i / 4, canvas.height)));
+        if (isZooming) {
+            this.recalculateAspect(this.pointsAmount);
         }
 
         ctx.strokeStyle = "white";
@@ -28,22 +28,42 @@ export default class Ruler {
 
         ctx.font = "20px Arial";
 
-        ctx.fillText(cornerPoint.x.toFixed(3) + ", " + cornerPoint.y.toFixed(3), 15, canvas.height - 15)
+        ctx.fillText("0", 15, canvas.height - 15)
 
-        for (let i = 1; i < 4; i++) {
+        for (let i = this.pointsAmount; i >= 1; i--) {
             // Вертикальные
-            const y = canvas.height * i / 4;
-            ctx.moveTo(0, y);
-            ctx.lineTo(10, y);
+            ctx.moveTo(0, this.verticalPoints[i - 1].y);
+            ctx.lineTo(10, this.verticalPoints[i - 1].y);
             ctx.stroke();
-            ctx.fillText(verticalPoints[i - 1].y.toFixed(3), 15, y)
+            ctx.fillText((this.aspect * i).toFixed(Math.max(this.power, 0)), 15, this.verticalPoints[i - 1].y);
 
             // Горизонтальные
-            const x = canvas.width * i / 4;
-            ctx.moveTo(x, canvas.height);
-            ctx.lineTo(x, canvas.height - 10);
+            ctx.moveTo(this.horizontalPoints[i - 1].x, canvas.height);
+            ctx.lineTo(this.horizontalPoints[i - 1].x, canvas.height - 10);
             ctx.stroke();
-            ctx.fillText(horizontalPoints[i - 1].x.toFixed(3), x, canvas.height - 15)
+            ctx.fillText((this.aspect * i).toFixed(Math.max(this.power, 0)), this.horizontalPoints[i - 1].x, canvas.height - 15);
+        }
+    }
+
+    recalculateAspect(pointsAmount) {
+        const [canvas, ctx, proj, objects] = this.geometry.destruct();
+
+        const cornerPoint = proj.screenToWorldPoint(new Vector(0, canvas.height));
+
+        const probeX = cornerPoint.add(new Vector(1, 0));
+        const linePointX = proj.worldToScreenPoint(probeX);
+        const power = Math.ceil(Math.log10((linePointX.x - cornerPoint.x) / canvas.width));
+        const aspect = Math.pow(10, -power);
+
+        this.power = power;
+        this.aspect = aspect;
+
+        this.verticalPoints = [];
+        this.horizontalPoints = [];
+
+        for (let i = 1; i < pointsAmount + 1; i++) {
+            this.verticalPoints.push(proj.worldToScreenPoint(cornerPoint.add(new Vector(0, aspect * i))));
+            this.horizontalPoints.push(proj.worldToScreenPoint(cornerPoint.add(new Vector(aspect * i, 0))));
         }
     }
 

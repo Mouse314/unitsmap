@@ -12,8 +12,12 @@ export default class Mouse {
     updatePosition(x, y) {
         this.x = x;
         this.y = y;
-        this.deltaX = x - this.prevX;
-        this.deltaY = y - this.prevY;
+
+        if (this.isClicked) {
+            this.deltaX = x - this.prevX;
+            this.deltaY = y - this.prevY;
+        }
+
         this.prevX = x;
         this.prevY = y;
     }

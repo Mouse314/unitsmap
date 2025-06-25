@@ -40,8 +40,10 @@ export default class TransformGeometry {
         this.currentGeometry.proj.horizontalRange = this.lerp(this.oldGeometry.proj.horizontalRange, this.newGeometry.proj.horizontalRange, deltaTime);
         this.currentGeometry.proj.verticalRange = this.lerp(this.oldGeometry.proj.verticalRange, this.newGeometry.proj.verticalRange, deltaTime);
 
+        this.ruler.geometry = this.currentGeometry;
+
         // Делаем дела
-        update(this.currentGeometry, this.ruler);
+        update(this.currentGeometry, this.ruler, true);
 
         if (progress < 1) {
             requestAnimationFrame(this.animateGeometry.bind(this));

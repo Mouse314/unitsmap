@@ -44,7 +44,7 @@ const projection = new Projection(center, horizontalRange, verticalRange, canvas
 
 const appGeometry = new Geometry(canvas, ctx, projection, objects);
 
-const ruler = new Ruler(appGeometry);
+const ruler = new Ruler(appGeometry, 10);
 
 window.addEventListener('resize', resizeCanvas);
 

@@ -1,10 +1,11 @@
 import update from "../Render/update.js";
 
 export default function drag(geometry, mouse, ruler) {
-    const [canvas, ctx, proj, objects] = geometry.destruct();
     if (!mouse.isClicked) {
-        
+        return;
     }
+
+    const [canvas, ctx, proj, objects] = geometry.destruct();
 
     // Перемещение карты
     proj.centerPoint.x -= mouse.deltaX / canvas.width * proj.horizontalRange;

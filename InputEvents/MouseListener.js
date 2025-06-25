@@ -57,6 +57,7 @@ export default function addMouseListeners(geometry, ruler) {
         transform.animate(geometry, newGeometry);
 
         geometry = newGeometry;
+        ruler.geometry = newGeometry;
 
         proj.setBackgroundPos(canvas);
         update(geometry, ruler);
