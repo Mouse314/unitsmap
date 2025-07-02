@@ -15,5 +15,8 @@
     "url": "https://github.com/Mouse314/UnitMap/issues"
   },
   "homepage": "https://github.com/Mouse314/UnitMap#readme",
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
 }

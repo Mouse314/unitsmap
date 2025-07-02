@@ -1,4 +1,4 @@
-import update from "../Render/update.js";
+import update from "../oldJSEngine/Render/update.js";
 
 export default function drag(geometry, mouse, ruler) {
     if (!mouse.isClicked) {

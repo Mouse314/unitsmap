@@ -1,8 +1,17 @@
-import update from "../Render/update.js";
-
+import Geometry from "../Geometry/geometry";
+import Ruler from "../Render/ruler";
+import update from "../Render/update";
 
 export default class TransformGeometry {
-    constructor(duration, ruler) {
+    startTime : number | null;
+    duration : number;
+    oldGeometry : Geometry | null;
+    newGeometry : Geometry | null;
+    ruler : Ruler | null;
+    currentGeometry : Geometry | null;
+    isAnimating : boolean;
+
+    constructor(duration : number, ruler : Ruler) {
         this.startTime = null;
         this.duration = duration;
         this.oldGeometry = null;
@@ -13,7 +22,7 @@ export default class TransformGeometry {
         this.isAnimating = false;
     }
 
-    animate(oldGeometry, newGeometry) {
+    public animate(oldGeometry : Geometry, newGeometry : Geometry) : void {
         if (this.isAnimating) {
             // this.oldGeometry = oldGeometry;
             this.newGeometry = newGeometry;
@@ -28,7 +37,7 @@ export default class TransformGeometry {
         }
     }
 
-    animateGeometry(currentTime) {
+    animateGeometry(currentTime : number) {
         if (!this.startTime) this.startTime = currentTime;
         const elapsedTime = currentTime - this.startTime;
         const progress = Math.min(elapsedTime / this.duration, 1); // t ∈ [0, 1]
@@ -36,14 +45,20 @@ export default class TransformGeometry {
         // Линейная интерполяция (LERP)
         const deltaTime = progress;
 
-        this.currentGeometry.proj.centerPoint = this.oldGeometry.proj.centerPoint.lerp(this.newGeometry.proj.centerPoint, deltaTime);
-        this.currentGeometry.proj.horizontalRange = this.lerp(this.oldGeometry.proj.horizontalRange, this.newGeometry.proj.horizontalRange, deltaTime);
-        this.currentGeometry.proj.verticalRange = this.lerp(this.oldGeometry.proj.verticalRange, this.newGeometry.proj.verticalRange, deltaTime);
+        if (this.currentGeometry && this.oldGeometry && this.newGeometry) {
+            this.currentGeometry.proj.centerPoint = this.oldGeometry.proj.centerPoint.lerp(this.newGeometry.proj.centerPoint, deltaTime);
+            this.currentGeometry.proj.horizontalRange = this.lerp(this.oldGeometry.proj.horizontalRange, this.newGeometry.proj.horizontalRange, deltaTime);
+            this.currentGeometry.proj.verticalRange = this.lerp(this.oldGeometry.proj.verticalRange, this.newGeometry.proj.verticalRange, deltaTime);
+        }
 
-        this.ruler.geometry = this.currentGeometry;
+        if (this.currentGeometry && this.ruler) {
+            this.ruler.geometry = this.currentGeometry;
+        }
 
         // Делаем дела
-        update(this.currentGeometry, this.ruler, true);
+        if (this.currentGeometry && this.ruler) {
+            update(this.currentGeometry, this.ruler, true);
+        }
 
         if (progress < 1) {
             requestAnimationFrame(this.animateGeometry.bind(this));
@@ -55,7 +70,7 @@ export default class TransformGeometry {
         }
     }
 
-    lerp(start, end, t) {
+    public lerp(start : number, end : number, t : number) : number {
         return start + (end - start) * t;
     }
 }
