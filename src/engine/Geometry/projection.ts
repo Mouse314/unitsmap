@@ -47,4 +47,32 @@ export default class Projection {
             this.backgroundSize
         );
     }
+
+    static getProjectionPoint(segmentStart : Vector, segmentEnd : Vector, point : Vector) : Vector {
+        const x1 = segmentStart.x, y1 = segmentStart.y;
+        const x2 = segmentEnd.x, y2 = segmentEnd.y;
+
+        const px = point.x, py = point.y;
+
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+
+        const tdx = px - x1;
+        const tdy = py - y1;
+
+        const lenSquared = dx * dx + dy * dy;
+
+        if (lenSquared === 0) {
+            return new Vector(x1, y1);
+        }
+
+        const t = (tdx * dx + tdy * dy) / lenSquared;
+
+        const clampedT = Math.max(0, Math.min(1, t));
+
+        const projX = x1 + clampedT * dx;
+        const projY = y1 + clampedT * dy;
+
+        return new Vector(projX, projY);
+    }
 }

@@ -265,27 +265,150 @@ var Projection = /*#__PURE__*/function () {
     value: function copy() {
       return new Projection(this.centerPoint.copy(), this.horizontalRange, this.verticalRange, this.canvas, this.backgroundSize);
     }
+  }], [{
+    key: "getProjectionPoint",
+    value: function getProjectionPoint(segmentStart, segmentEnd, point) {
+      var x1 = segmentStart.x,
+        y1 = segmentStart.y;
+      var x2 = segmentEnd.x,
+        y2 = segmentEnd.y;
+      var px = point.x,
+        py = point.y;
+      var dx = x2 - x1;
+      var dy = y2 - y1;
+      var tdx = px - x1;
+      var tdy = py - y1;
+      var lenSquared = dx * dx + dy * dy;
+      if (lenSquared === 0) {
+        return new vector_1.default(x1, y1);
+      }
+      var t = (tdx * dx + tdy * dy) / lenSquared;
+      var clampedT = Math.max(0, Math.min(1, t));
+      var projX = x1 + clampedT * dx;
+      var projY = y1 + clampedT * dy;
+      return new vector_1.default(projX, projY);
+    }
   }]);
 }();
 exports.default = Projection;
-},{"./vector":"engine/Geometry/vector.ts"}],"engine/Render/update.ts":[function(require,module,exports) {
+},{"./vector":"engine/Geometry/vector.ts"}],"engine/InputEvents/cursor.ts":[function(require,module,exports) {
 "use strict";
 
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t.return || t.return(); } finally { if (u) throw o; } } }; }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
+function _classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function _defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, _toPropertyKey(o.key), o); } }
+function _createClass(e, r, t) { return r && _defineProperties(e.prototype, r), t && _defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+var vector_1 = __importDefault(require("../Geometry/vector"));
+var Cursor = /*#__PURE__*/function () {
+  function Cursor() {
+    _classCallCheck(this, Cursor);
+    this.isAxisBinding = true;
+    this.isEdgeBinding = true;
+    this.color = "rgb(4, 4, 149)";
+    this.selectedObject = null;
+  }
+  return _createClass(Cursor, [{
+    key: "drawCursor",
+    value: function drawCursor(geometry, mousePosition, objects) {
+      // const position = this.getPointPosition(geometry.proj, mousePosition, objects);
+      var position = this.getLinePosition(geometry.proj.worldToScreenPoint(new vector_1.default(0, 0)), mousePosition)[0];
+      geometry.ctx.beginPath();
+      geometry.ctx.fillStyle = this.color;
+      geometry.ctx.arc(position.x, position.y, 10, 0, 2 * Math.PI);
+      geometry.ctx.fill();
+    }
+  }, {
+    key: "setSelectedObject",
+    value: function setSelectedObject(object) {
+      this.selectedObject = object;
+    }
+  }, {
+    key: "getPointPosition",
+    value: function getPointPosition(proj, mousePosition, objects) {
+      if (this.isEdgeBinding) {
+        var _iterator = _createForOfIteratorHelper(objects.figures),
+          _step;
+        try {
+          for (_iterator.s(); !(_step = _iterator.n()).done;) {
+            var figure = _step.value;
+            var boundPoint = figure.checkEdgeBound(proj, mousePosition, 10);
+            if (boundPoint) {
+              if (boundPoint[1] === "corner") {
+                this.color = "rgb(211, 79, 2)";
+              } else {
+                this.color = "rgb(91, 189, 12)";
+              }
+              return boundPoint[0];
+            }
+          }
+        } catch (err) {
+          _iterator.e(err);
+        } finally {
+          _iterator.f();
+        }
+        this.color = "rgb(4, 4, 149)";
+        return mousePosition;
+      } else return mousePosition;
+    }
+  }, {
+    key: "getLinePosition",
+    value: function getLinePosition(startPoint, currentPoint) {
+      if (this.isAxisBinding) {
+        var angle = Math.atan2(currentPoint.y - startPoint.y, currentPoint.x - startPoint.x);
+        // Вправо
+        if (Math.abs(angle) < Math.PI / 4) return [new vector_1.default(currentPoint.x, startPoint.y), "right"];
+        // Вверх
+        if (Math.abs(angle + Math.PI / 2) < Math.PI / 4) return [new vector_1.default(startPoint.x, currentPoint.y), "up"];
+        // Влево
+        if (Math.abs(Math.abs(angle) - Math.PI) < Math.PI / 4) return [new vector_1.default(currentPoint.x, startPoint.y), "left"];
+        // Вниз
+        if (Math.abs(angle - Math.PI / 2) < Math.PI / 4) return [new vector_1.default(startPoint.x, currentPoint.y), "down"];
+        return [currentPoint, "none"];
+      } else return [currentPoint, "none"];
+    }
+  }]);
+}();
+exports.default = Cursor;
+},{"../Geometry/vector":"engine/Geometry/vector.ts"}],"engine/Render/update.ts":[function(require,module,exports) {
+"use strict";
+
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = update;
+var vector_1 = __importDefault(require("../Geometry/vector"));
 function update(geometry, ruler) {
   var isZooming = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+  var mouse = arguments.length > 3 ? arguments[3] : undefined;
+  var cursor = arguments.length > 4 ? arguments[4] : undefined;
   var canvas = geometry.canvas,
     ctx = geometry.ctx,
     proj = geometry.proj,
     objects = geometry.objects;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  objects.drawAll(ctx, proj);
+  objects.drawAll(ctx, proj, mouse);
   if (isZooming) ruler.draw(isZooming);else ruler.draw();
+  if (mouse) cursor.drawCursor(geometry, new vector_1.default(mouse.x, mouse.y), objects);
 }
-},{}],"engine/State/mapDrag.ts":[function(require,module,exports) {
+},{"../Geometry/vector":"engine/Geometry/vector.ts"}],"engine/State/mapDrag.ts":[function(require,module,exports) {
 "use strict";
 
 var __importDefault = this && this.__importDefault || function (mod) {
@@ -298,10 +421,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = drag;
 var update_1 = __importDefault(require("../Render/update"));
-function drag(geometry, mouse, ruler) {
-  if (!mouse.isClicked) {
-    return;
-  }
+function drag(geometry, mouse, ruler, cursor) {
   var canvas = geometry.canvas,
     ctx = geometry.ctx,
     proj = geometry.proj,
@@ -310,7 +430,7 @@ function drag(geometry, mouse, ruler) {
   proj.centerPoint.x -= mouse.deltaX / canvas.width * proj.horizontalRange;
   proj.centerPoint.y += mouse.deltaY / canvas.height * proj.verticalRange;
   proj.setBackgroundPos();
-  (0, update_1.default)(geometry, ruler);
+  (0, update_1.default)(geometry, ruler, false, mouse, cursor);
 }
 },{"../Render/update":"engine/Render/update.ts"}],"engine/State/transform.ts":[function(require,module,exports) {
 "use strict";
@@ -329,6 +449,7 @@ var __importDefault = this && this.__importDefault || function (mod) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+var cursor_1 = __importDefault(require("../InputEvents/cursor"));
 var update_1 = __importDefault(require("../Render/update"));
 var TransformGeometry = /*#__PURE__*/function () {
   function TransformGeometry(duration, ruler) {
@@ -374,7 +495,7 @@ var TransformGeometry = /*#__PURE__*/function () {
       }
       // Делаем дела
       if (this.currentGeometry && this.ruler) {
-        (0, update_1.default)(this.currentGeometry, this.ruler, true);
+        (0, update_1.default)(this.currentGeometry, this.ruler, true, null, new cursor_1.default());
       }
       if (progress < 1) {
         requestAnimationFrame(this.animateGeometry.bind(this));
@@ -393,7 +514,7 @@ var TransformGeometry = /*#__PURE__*/function () {
   }]);
 }();
 exports.default = TransformGeometry;
-},{"../Render/update":"engine/Render/update.ts"}],"engine/InputEvents/mouse.ts":[function(require,module,exports) {
+},{"../InputEvents/cursor":"engine/InputEvents/cursor.ts","../Render/update":"engine/Render/update.ts"}],"engine/InputEvents/mouse.ts":[function(require,module,exports) {
 "use strict";
 
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
@@ -466,6 +587,7 @@ var vector_1 = __importDefault(require("../Geometry/vector"));
 var update_1 = __importDefault(require("../Render/update"));
 var mapDrag_1 = __importDefault(require("../State/mapDrag"));
 var transform_1 = __importDefault(require("../State/transform"));
+var cursor_1 = __importDefault(require("./cursor"));
 var mouse_1 = __importDefault(require("./mouse"));
 function addMouseListeners(geometry, ruler) {
   var _geometry = geometry,
@@ -475,6 +597,7 @@ function addMouseListeners(geometry, ruler) {
     objects = _geometry.objects;
   var mouse = new mouse_1.default();
   var transform = new transform_1.default(100, ruler);
+  var cursor = new cursor_1.default();
   canvas.addEventListener("mousedown", function (e) {
     mouse.updatePosition(e.offsetX, e.offsetY);
     mouse.setClicked(true);
@@ -482,7 +605,7 @@ function addMouseListeners(geometry, ruler) {
   canvas.addEventListener("mousemove", function (e) {
     mouse.updatePosition(e.offsetX, e.offsetY);
     // Перетаскивание карты
-    (0, mapDrag_1.default)(geometry, mouse, ruler);
+    if (mouse.isClicked) (0, mapDrag_1.default)(geometry, mouse, ruler, cursor);else (0, update_1.default)(geometry, ruler, false, mouse, cursor);
   });
   canvas.addEventListener("mouseup", function (e) {
     mouse.setClicked(false);
@@ -491,20 +614,20 @@ function addMouseListeners(geometry, ruler) {
   var zoomIntencity = 0.1;
   canvas.addEventListener("wheel", function (e) {
     e.preventDefault();
-    var cursorWorld = proj.screenToWorldPoint(new vector_1.default(e.offsetX, e.offsetY));
-    var deltaX = (cursorWorld.x - proj.centerPoint.x) * zoomIntencity;
-    var deltaY = (cursorWorld.y - proj.centerPoint.y) * zoomIntencity;
     var newGeometry = geometry.copy();
+    var cursorWorld = newGeometry.proj.screenToWorldPoint(new vector_1.default(e.offsetX, e.offsetY));
+    var deltaX = (cursorWorld.x - newGeometry.proj.centerPoint.x) * zoomIntencity;
+    var deltaY = (cursorWorld.y - newGeometry.proj.centerPoint.y) * zoomIntencity;
     if (e.deltaY < 0) {
       // Вниз
-      newGeometry.proj.horizontalRange -= proj.horizontalRange * zoomIntencity;
-      newGeometry.proj.verticalRange -= proj.verticalRange * zoomIntencity;
+      newGeometry.proj.horizontalRange -= newGeometry.proj.horizontalRange * zoomIntencity;
+      newGeometry.proj.verticalRange -= newGeometry.proj.verticalRange * zoomIntencity;
       newGeometry.proj.centerPoint.x += deltaX;
       newGeometry.proj.centerPoint.y += deltaY;
     } else {
       // Вверх
-      newGeometry.proj.horizontalRange += proj.horizontalRange * zoomIntencity;
-      newGeometry.proj.verticalRange += proj.verticalRange * zoomIntencity;
+      newGeometry.proj.horizontalRange += newGeometry.proj.horizontalRange * zoomIntencity;
+      newGeometry.proj.verticalRange += newGeometry.proj.verticalRange * zoomIntencity;
       newGeometry.proj.centerPoint.x -= deltaX;
       newGeometry.proj.centerPoint.y -= deltaY;
     }
@@ -512,10 +635,56 @@ function addMouseListeners(geometry, ruler) {
     geometry = newGeometry;
     ruler.geometry = newGeometry;
     proj.setBackgroundPos();
-    (0, update_1.default)(geometry, ruler);
+    (0, update_1.default)(geometry, ruler, false, mouse, cursor);
   });
 }
-},{"../Geometry/vector":"engine/Geometry/vector.ts","../Render/update":"engine/Render/update.ts","../State/mapDrag":"engine/State/mapDrag.ts","../State/transform":"engine/State/transform.ts","./mouse":"engine/InputEvents/mouse.ts"}],"engine/Render/Figures/figure.ts":[function(require,module,exports) {
+},{"../Geometry/vector":"engine/Geometry/vector.ts","../Render/update":"engine/Render/update.ts","../State/mapDrag":"engine/State/mapDrag.ts","../State/transform":"engine/State/transform.ts","./cursor":"engine/InputEvents/cursor.ts","./mouse":"engine/InputEvents/mouse.ts"}],"engine/Render/color.ts":[function(require,module,exports) {
+"use strict";
+
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function _classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
+function _defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, _toPropertyKey(o.key), o); } }
+function _createClass(e, r, t) { return r && _defineProperties(e.prototype, r), t && _defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+var Color = /*#__PURE__*/function () {
+  function Color(color) {
+    _classCallCheck(this, Color);
+    this.r = 255;
+    this.g = 255;
+    this.b = 255;
+    this.alpha = 1;
+    this.name = color;
+    this.parseColorsFromString(color);
+  }
+  return _createClass(Color, [{
+    key: "getName",
+    value: function getName() {
+      return "rgba(".concat(this.r, ", ").concat(this.g, ", ").concat(this.b, ", ").concat(this.alpha, ")");
+    }
+  }, {
+    key: "getOpaque",
+    value: function getOpaque() {
+      var newColor = new Color(this.getName());
+      newColor.alpha = 1;
+      return newColor;
+    }
+  }, {
+    key: "parseColorsFromString",
+    value: function parseColorsFromString(color) {
+      var components = color.split("(")[1].split(")")[0].split(",");
+      this.r = parseInt(components[0]);
+      this.g = parseInt(components[1]);
+      this.b = parseInt(components[2]);
+      components.length > 3 ? this.alpha = parseFloat(components[3]) : this.alpha = 1;
+    }
+  }]);
+}();
+exports.default = Color;
+},{}],"engine/Render/Figures/figure.ts":[function(require,module,exports) {
 "use strict";
 
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
@@ -530,11 +699,22 @@ Object.defineProperty(exports, "__esModule", {
 var Figure = /*#__PURE__*/function () {
   function Figure(center) {
     _classCallCheck(this, Figure);
+    this.isSelected = false;
     this.center = center;
   }
   return _createClass(Figure, [{
     key: "draw",
     value: function draw(ctx, proj) {
+      throw new Error("Метод не реализован в подклассах");
+    }
+  }, {
+    key: "checkSelected",
+    value: function checkSelected(mousePosition, proj) {
+      throw new Error("Метод не реализован в подклассах");
+    }
+  }, {
+    key: "checkEdgeBound",
+    value: function checkEdgeBound(proj, mousePos, boundRadius) {
       throw new Error("Метод не реализован в подклассах");
     }
   }]);
@@ -544,6 +724,9 @@ exports.default = Figure;
 "use strict";
 
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t.return || t.return(); } finally { if (u) throw o; } } }; }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function _classCallCheck(a, n) { if (!(a instanceof n)) throw new TypeError("Cannot call a class as a function"); }
 function _defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = r[t]; o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(e, _toPropertyKey(o.key), o); } }
 function _createClass(e, r, t) { return r && _defineProperties(e.prototype, r), t && _defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
@@ -564,6 +747,7 @@ var __importDefault = this && this.__importDefault || function (mod) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+var projection_1 = __importDefault(require("../../Geometry/projection"));
 var vector_1 = __importDefault(require("../../Geometry/vector"));
 var figure_1 = __importDefault(require("./figure"));
 var Polygon = /*#__PURE__*/function (_figure_1$default) {
@@ -596,10 +780,42 @@ var Polygon = /*#__PURE__*/function (_figure_1$default) {
       ctx.lineWidth = this.borderWidth;
       ctx.stroke();
     }
+  }, {
+    key: "checkSelected",
+    value: function checkSelected(mousePosition, proj) {
+      this.isSelected = false;
+      return false;
+    }
+  }, {
+    key: "checkEdgeBound",
+    value: function checkEdgeBound(proj, mousePos, boundRadius) {
+      var points = this.vertices.map(function (v) {
+        return proj.worldToScreenPoint(v);
+      });
+      // Привязка к углам
+      var _iterator = _createForOfIteratorHelper(points),
+        _step;
+      try {
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          var point = _step.value;
+          if (point.distance(mousePos) <= boundRadius) return [point, "corner"];
+        }
+        // Привязка к рёбрам
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+      for (var i = 0; i < points.length; i++) {
+        var projPoint = projection_1.default.getProjectionPoint(points[i], points[(i + 1) % points.length], mousePos);
+        if (projPoint.distance(mousePos) <= boundRadius) return [projPoint, "edge"];
+      }
+      return null;
+    }
   }]);
 }(figure_1.default);
 exports.default = Polygon;
-},{"../../Geometry/vector":"engine/Geometry/vector.ts","./figure":"engine/Render/Figures/figure.ts"}],"engine/Render/Figures/rect.ts":[function(require,module,exports) {
+},{"../../Geometry/projection":"engine/Geometry/projection.ts","../../Geometry/vector":"engine/Geometry/vector.ts","./figure":"engine/Render/Figures/figure.ts"}],"engine/Render/Figures/rect.ts":[function(require,module,exports) {
 "use strict";
 
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
@@ -623,6 +839,7 @@ var __importDefault = this && this.__importDefault || function (mod) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+var projection_1 = __importDefault(require("../../Geometry/projection"));
 var vector_1 = __importDefault(require("../../Geometry/vector"));
 var figure_1 = __importDefault(require("./figure"));
 var Rect = /*#__PURE__*/function (_figure_1$default) {
@@ -641,14 +858,14 @@ var Rect = /*#__PURE__*/function (_figure_1$default) {
   return _createClass(Rect, [{
     key: "draw",
     value: function draw(ctx, proj) {
-      var startWorldPoint = new vector_1.default(this.center.x - this.width / 2, this.center.y - this.height / 2);
+      var startWorldPoint = new vector_1.default(this.center.x - this.width / 2, this.center.y + this.height / 2);
       var screenPointStart = proj.worldToScreenPoint(startWorldPoint);
       var screenPoint1 = proj.worldToScreenPoint(startWorldPoint.add(new vector_1.default(this.width, 0)));
       var screenPoint2 = proj.worldToScreenPoint(startWorldPoint.add(new vector_1.default(this.width, -this.height)));
       var screenPoint3 = proj.worldToScreenPoint(startWorldPoint.sub(new vector_1.default(0, this.height)));
-      ctx.fillStyle = this.fillColor;
       ctx.strokeStyle = this.borderColor;
-      ctx.lineWidth = this.borderWidth;
+      ctx.fillStyle = this.isSelected ? this.fillColor.getOpaque().getName() : this.fillColor.getName();
+      ctx.lineWidth = this.isSelected ? this.borderWidth * 2 : this.borderWidth;
       ctx.beginPath();
       ctx.moveTo(screenPointStart.x, screenPointStart.y);
       ctx.lineTo(screenPoint1.x, screenPoint1.y);
@@ -658,13 +875,41 @@ var Rect = /*#__PURE__*/function (_figure_1$default) {
       ctx.fill();
       ctx.stroke();
     }
+  }, {
+    key: "checkSelected",
+    value: function checkSelected(mousePosition, proj) {
+      var mouseWorld = proj.screenToWorldPoint(mousePosition);
+      if (mouseWorld.x >= this.center.x - this.width / 2 && mouseWorld.x <= this.center.x + this.width / 2 && mouseWorld.y >= this.center.y - this.height / 2 && mouseWorld.y <= this.center.y + this.height / 2) {
+        this.isSelected = true;
+        return true;
+      } else this.isSelected = false;
+      return false;
+    }
+  }, {
+    key: "checkEdgeBound",
+    value: function checkEdgeBound(proj, mousePos, boundRadius) {
+      // Привязка к углам
+      var startWorldPoint = new vector_1.default(this.center.x - this.width / 2, this.center.y + this.height / 2);
+      var points = [proj.worldToScreenPoint(startWorldPoint), proj.worldToScreenPoint(startWorldPoint.add(new vector_1.default(this.width, 0))), proj.worldToScreenPoint(startWorldPoint.add(new vector_1.default(this.width, -this.height))), proj.worldToScreenPoint(startWorldPoint.sub(new vector_1.default(0, this.height)))];
+      for (var _i = 0, _points = points; _i < _points.length; _i++) {
+        var point = _points[_i];
+        if (point.distance(mousePos) <= boundRadius) return [point, "corner"];
+      }
+      // Привязка к рёбрам
+      for (var i = 0; i < 4; i++) {
+        var projPoint = projection_1.default.getProjectionPoint(points[i], points[(i + 1) % 4], mousePos);
+        if (projPoint.distance(mousePos) <= boundRadius) return [projPoint, "edge"];
+      }
+      return null;
+    }
   }]);
 }(figure_1.default);
 exports.default = Rect;
-},{"../../Geometry/vector":"engine/Geometry/vector.ts","./figure":"engine/Render/Figures/figure.ts"}],"engine/Render/objects.ts":[function(require,module,exports) {
+},{"../../Geometry/projection":"engine/Geometry/projection.ts","../../Geometry/vector":"engine/Geometry/vector.ts","./figure":"engine/Render/Figures/figure.ts"}],"engine/Render/objects.ts":[function(require,module,exports) {
 "use strict";
 
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t.return || t.return(); } finally { if (u) throw o; } } }; }
 function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
@@ -676,12 +921,19 @@ function _defineProperties(e, r) { for (var t = 0; t < r.length; t++) { var o = 
 function _createClass(e, r, t) { return r && _defineProperties(e.prototype, r), t && _defineProperties(e, t), Object.defineProperty(e, "prototype", { writable: !1 }), e; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+var __importDefault = this && this.__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+var vector_1 = __importDefault(require("../Geometry/vector"));
 var Objects = /*#__PURE__*/function () {
   function Objects() {
     _classCallCheck(this, Objects);
+    this.prevSelected = false;
     this.figures = [];
   }
   return _createClass(Objects, [{
@@ -690,16 +942,42 @@ var Objects = /*#__PURE__*/function () {
       this.figures = [].concat(_toConsumableArray(this.figures), _toConsumableArray(figures));
     }
   }, {
+    key: "checkSelections",
+    value: function checkSelections(proj, mouse) {
+      var anySelections = false;
+      if (mouse) {
+        var _iterator = _createForOfIteratorHelper(this.figures),
+          _step;
+        try {
+          for (_iterator.s(); !(_step = _iterator.n()).done;) {
+            var figure = _step.value;
+            if (figure.checkSelected(new vector_1.default(mouse.x, mouse.y), proj)) {
+              anySelections = true;
+              break;
+            }
+          }
+        } catch (err) {
+          _iterator.e(err);
+        } finally {
+          _iterator.f();
+        }
+      }
+      anySelections = anySelections || anySelections !== this.prevSelected;
+      this.prevSelected = anySelections;
+      return anySelections;
+    }
+  }, {
     key: "drawAll",
-    value: function drawAll(ctx, proj) {
+    value: function drawAll(ctx, proj, mouse) {
       this.figures.forEach(function (figure) {
+        if (mouse) figure.checkSelected(new vector_1.default(mouse.x, mouse.y), proj);
         figure.draw(ctx, proj);
       });
     }
   }]);
 }();
 exports.default = Objects;
-},{}],"engine/Render/ruler.ts":[function(require,module,exports) {
+},{"../Geometry/vector":"engine/Geometry/vector.ts"}],"engine/Render/ruler.ts":[function(require,module,exports) {
 "use strict";
 
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
@@ -741,6 +1019,7 @@ var Ruler = /*#__PURE__*/function () {
         this.recalculateAspect(this.pointsAmount);
       }
       ctx.strokeStyle = "white";
+      ctx.fillStyle = "white";
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(0, 0);
@@ -811,17 +1090,30 @@ Object.defineProperty(exports, "__esModule", {
 var geometry_1 = __importDefault(require("./engine/Geometry/geometry"));
 var projection_1 = __importDefault(require("./engine/Geometry/projection"));
 var vector_1 = __importDefault(require("./engine/Geometry/vector"));
+var cursor_1 = __importDefault(require("./engine/InputEvents/cursor"));
 var mouseListener_1 = __importDefault(require("./engine/InputEvents/mouseListener"));
+var color_1 = __importDefault(require("./engine/Render/color"));
 var polygon_1 = __importDefault(require("./engine/Render/Figures/polygon"));
 var rect_1 = __importDefault(require("./engine/Render/Figures/rect"));
 var objects_1 = __importDefault(require("./engine/Render/objects"));
 var ruler_1 = __importDefault(require("./engine/Render/ruler"));
 var update_1 = __importDefault(require("./engine/Render/update"));
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 var canvas = document.getElementById('drawingField');
 var ctx = canvas.getContext("2d");
 var container = canvas.parentElement;
 var objects = new objects_1.default();
-var figures = [new rect_1.default(new vector_1.default(.1, .2), .1, .1, "pink", 2, "blue"), new rect_1.default(new vector_1.default(.3, .4), .1, .1, "green", 1, "red"), new polygon_1.default([new vector_1.default(.2, .2), new vector_1.default(.2, .3), new vector_1.default(.3, .4)], "rose", 3, "magenta")];
+var figures = [new rect_1.default(new vector_1.default(0, 0), .1, .1, "blue", 2, new color_1.default("rgba(125, 153, 24, 0.5)")), new rect_1.default(new vector_1.default(.31, .41), .1, .1, "green", 1, new color_1.default("rgba(10, 49, 133, 0.5)")), new polygon_1.default([new vector_1.default(.2, .2), new vector_1.default(.2, .3), new vector_1.default(.3, .4)], "rose", 3, "magenta")];
+// for(let i = 0; i < 10; i++) {
+//     for (let j = 0; j < 10; j++) {
+//         figures.push(new Rect(new Vector(i / 10, j / 10), .1, .1, "white", 2, 
+//         new Color(`rgba(${getRandomInt(0, 255)}, ${getRandomInt(0, 255)}, ${getRandomInt(0, 255)}, ${Math.random()})`)));
+//     }
+// }
 objects.addFigures(figures);
 function resizeCanvas() {
   var computedStyle = getComputedStyle(container);
@@ -840,9 +1132,9 @@ var projection = new projection_1.default(center, horizontalRange, verticalRange
 var appGeometry = new geometry_1.default(canvas, ctx, projection, objects);
 var ruler = new ruler_1.default(appGeometry, 10);
 window.addEventListener('resize', resizeCanvas);
-(0, update_1.default)(appGeometry, ruler);
+(0, update_1.default)(appGeometry, ruler, false, null, new cursor_1.default());
 (0, mouseListener_1.default)(appGeometry, ruler);
-},{"./engine/Geometry/geometry":"engine/Geometry/geometry.ts","./engine/Geometry/projection":"engine/Geometry/projection.ts","./engine/Geometry/vector":"engine/Geometry/vector.ts","./engine/InputEvents/mouseListener":"engine/InputEvents/mouseListener.ts","./engine/Render/Figures/polygon":"engine/Render/Figures/polygon.ts","./engine/Render/Figures/rect":"engine/Render/Figures/rect.ts","./engine/Render/objects":"engine/Render/objects.ts","./engine/Render/ruler":"engine/Render/ruler.ts","./engine/Render/update":"engine/Render/update.ts"}],"../../../../../AppData/Roaming/npm/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"./engine/Geometry/geometry":"engine/Geometry/geometry.ts","./engine/Geometry/projection":"engine/Geometry/projection.ts","./engine/Geometry/vector":"engine/Geometry/vector.ts","./engine/InputEvents/cursor":"engine/InputEvents/cursor.ts","./engine/InputEvents/mouseListener":"engine/InputEvents/mouseListener.ts","./engine/Render/color":"engine/Render/color.ts","./engine/Render/Figures/polygon":"engine/Render/Figures/polygon.ts","./engine/Render/Figures/rect":"engine/Render/Figures/rect.ts","./engine/Render/objects":"engine/Render/objects.ts","./engine/Render/ruler":"engine/Render/ruler.ts","./engine/Render/update":"engine/Render/update.ts"}],"../../../../../AppData/Roaming/npm/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -867,7 +1159,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56484" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "63379" + '/');
   ws.onmessage = function (event) {
     checkedAssets = {};
     assetsToAccept = [];

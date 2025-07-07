@@ -38,4 +38,26 @@ export default class Polygon extends Figure {
         ctx.lineWidth = this.borderWidth;
         ctx.stroke();
     }
+
+    public checkSelected(mousePosition: Vector, proj: Projection): boolean {
+        this.isSelected = false;
+        return false;
+    }
+
+    public checkEdgeBound(proj: Projection, mousePos: Vector, boundRadius: number): [Vector, string] | null {
+        const points = this.vertices.map(v => proj.worldToScreenPoint(v));
+
+        // Привязка к углам
+        for (let point of points) {
+            if (point.distance(mousePos) <= boundRadius) return [point, "corner"];
+        }
+
+        // Привязка к рёбрам
+        for (let i = 0; i < points.length; i++) {
+            const projPoint = Projection.getProjectionPoint(points[i], points[(i + 1) % points.length], mousePos);
+            if (projPoint.distance(mousePos) <= boundRadius) return [projPoint, "edge"];
+        }
+
+        return null;
+    }
 }

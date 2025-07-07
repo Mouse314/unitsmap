@@ -1,4 +1,5 @@
 import Geometry from "../Geometry/geometry";
+import Cursor from "../InputEvents/cursor";
 import Ruler from "../Render/ruler";
 import update from "../Render/update";
 
@@ -57,7 +58,7 @@ export default class TransformGeometry {
 
         // Делаем дела
         if (this.currentGeometry && this.ruler) {
-            update(this.currentGeometry, this.ruler, true);
+            update(this.currentGeometry, this.ruler, true, null, new Cursor());
         }
 
         if (progress < 1) {

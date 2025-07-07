@@ -1,5 +1,7 @@
 # Игнорировать node_modules
 node_modules/
+/src/.cache/
+/src/dist/
 
 # Дополнительно: игнорировать зависимости в других местах
 **/node_modules/

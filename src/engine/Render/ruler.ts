@@ -27,6 +27,7 @@ export default class Ruler {
         }
 
         ctx.strokeStyle = "white";
+        ctx.fillStyle = "white";
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.moveTo(0, 0);
